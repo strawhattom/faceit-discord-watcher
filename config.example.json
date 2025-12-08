@@ -1,0 +1,14 @@
+{
+    "faceit_token": "your-faceit-api-token-here",
+    "faceit_guid": "your-faceit-guid-here",
+    "discord_token": "your-discord-bot-token-here",
+    "discord_channel_id": "your-discord-channel-id-here",
+    "poll_interval_seconds": 60,
+    "faceit_users": [
+        "nickname1",
+        "nickname2",
+        "player-id-3"
+    ]
+}
+
+

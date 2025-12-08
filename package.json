@@ -1,0 +1,18 @@
+{
+  "name": "faceit-discord-watcher",
+  "version": "1.0.0",
+  "description": "A bot that watches for faceit users' matches and sends them to a discord channel",
+  "main": "src/main",
+  "scripts": {
+    "start": "node src/main",
+    "dev": "node --watch src/main",
+    "test": "jest src/test/*.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "discord.js": "^14.25.1"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0"
+  }
+}
