@@ -1,6 +1,10 @@
 const FaceitAPI = require('./faceit-api');
 const MatchTracker = require('./match-tracker');
 
+/**
+ * @import { UserResult, MatchDetail } from "./types/match-monitor"
+ */
+
 class MatchMonitor {
 
     /** @type {FaceitAPI} */
@@ -32,7 +36,6 @@ class MatchMonitor {
     start(intervalMs = 60000) {
         this.pollIntervalMs = intervalMs;
         console.log(`Starting match monitor (polling every ${intervalMs / 1000}s)`);
-        
         // Initial check
         this.checkMatches();
         
@@ -134,7 +137,7 @@ class MatchMonitor {
                     // Process each user in this match and collect results
                     const userResults = [];
                     for (const userData of usersInMatch) {
-                        const result = this.processNewMatch(
+                        const result = await this.processNewMatch(
                             userData.playerId,
                             userData.match,
                             userData.currentElo,
@@ -153,7 +156,6 @@ class MatchMonitor {
                             usersInMatch[0].match,
                             matchDetails,
                             userResults,
-                            this.first
                         );
                     }
 
@@ -214,9 +216,9 @@ class MatchMonitor {
      * @param {Object} match - Match data
      * @param {number} currentElo - Current ELO after match
      * @param {Object} userInfo - User tracking info
-     * @param {Object} [matchDetails] - Optional pre-fetched match details
+     * @param {MatchDetail} [matchDetails] - Optional pre-fetched match details
      * @param {number} [lastElo] - Optional last ELO before the match (to preserve ELO from before check)
-     * @returns {Object|null} User match result data or null if error
+     * @returns {UserResult|null} User match result data or null if error
      */
     async processNewMatch(playerId, match, currentElo, userInfo, matchDetails = null, lastElo = null) {
         try {
@@ -343,16 +345,15 @@ class MatchMonitor {
 
     /**
      * 
-     * @param {Object} result       User result object with {nickname, oldElo, currentElo, eloChange, won}
-     * @param {boolean} first       Indicate if this is the first result (changes the content)
-     * @returns 
+     * @param {UserResult} result       User result object with {nickname, oldElo, currentElo, eloChange, won}
+     * @returns {string}
      */
-    #getUserInlineDetail(result, first = false) {
+    #getUserInlineDetail(result) {
         const eloChangeStr = result.eloChange > 0 ? `+${result.eloChange}` : `${result.eloChange}`;
         
         let message = `**${result.nickname}**: ${result.oldElo} → ${result.currentElo} (${eloChangeStr})`
         
-        if (!first) {
+        if (!this.first) {
             const emoji = result.won ? '✅' : '❌';
             message = `${emoji} ${message}`;
         }
@@ -365,9 +366,8 @@ class MatchMonitor {
      * @param {Object} match - Match data
      * @param {Object} matchDetails - Match details
      * @param {Array} userResults - Array of user result objects with {nickname, oldElo, currentElo, eloChange, won}
-     * @param {boolean} first - Indicate if this is the first grouped discord notification since start. (changes the embed message content)
     */
-    async sendGroupedDiscordNotification(match, matchDetails, userResults, first = false) {
+    async sendGroupedDiscordNotification(match, matchDetails, userResults) {
         try {
             if (!userResults || userResults.length === 0) {
                 return;
@@ -378,10 +378,10 @@ class MatchMonitor {
             const color = hasWin ? 0x00ff00 : 0xff0000;
 
             // Build description with all users
-            const userDescriptions = userResults.map(result => this.#getUserInlineDetail(result, first));
+            const userDescriptions = userResults.map(r => this.#getUserInlineDetail(r));
 
             const trackedPlayersLabel = `${userResults.length} tracked player${userResults.length > 1 ? 's' : ''}`
-            const embedMainTitle = first ? `Keeping track of latest matches for ${trackedPlayersLabel}` : `New latest match results (${trackedPlayersLabel})`
+            const embedMainTitle = this.first ? `Keeping track of latest matches for ${trackedPlayersLabel}` : `New latest match results (${trackedPlayersLabel})`
 
             const embed = {
                 title: `🎮 Faceit - ${embedMainTitle}`,
@@ -389,7 +389,7 @@ class MatchMonitor {
                 color: color,
                 fields: [
                     {
-                        name: first ? 'Last Match ID' : 'Match ID',
+                        name: this.first ? 'Last Match ID' : 'Match ID',
                         value: match.match_id,
                         inline: true
                     },
@@ -411,9 +411,9 @@ class MatchMonitor {
             }
 
             // Add match map pick
-            if (match?.voting?.map?.pick?.length === 1) {
-                const mapId = match.voting.map.pick.length[0]
-                const mapDetail = match.voting.map.entities.find(map => map.guid === mapId);
+            if (matchDetails?.voting?.map?.pick?.length === 1) {
+                const mapId = matchDetails.voting.map.pick[0]
+                const mapDetail = matchDetails.voting.map.entities.find(map => map.guid === mapId);
                 embed.fields.push({
                     name: "Map",
                     value: mapDetail.name

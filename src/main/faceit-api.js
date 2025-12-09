@@ -1,5 +1,9 @@
 const axios = require('axios');
 
+/**
+ * @import { MatchDetail } from "./types/faceit"
+ */
+
 class FaceitAPI {
     constructor(apiKey) {
         this.apiKey = apiKey;
@@ -95,7 +99,7 @@ class FaceitAPI {
     /**
      * Get match details
      * @param {string} matchId - FACEIT match ID
-     * @returns {Promise<Object>} Match details
+     * @returns {Promise<MatchDetail>} Match details
      */
     async getMatchDetails(matchId) {
         try {
