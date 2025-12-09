@@ -155,10 +155,6 @@ class MatchMonitor {
                             userResults,
                             this.first
                         );
-
-                        if (this.first) {
-                            this.first = false;
-                        }
                     }
 
                     // Small delay between matches
@@ -169,6 +165,10 @@ class MatchMonitor {
             }
 
             await this.matchTracker.updateLastCheck();
+            
+            if (this.first) {
+                this.first = false;
+            }
         } catch (error) {
             console.error('Error in checkMatches:', error);
         }
