@@ -34,7 +34,6 @@ Copy `config.example.json` to `config.json` and fill in your values:
 ```json
 {
     "faceit_token": "your-faceit-api-token",
-    "faceit_guid": "your-faceit-guid",
     "discord_token": "your-discord-bot-token",
     "discord_channel_id": "your-discord-channel-id",
     "poll_interval_seconds": 60,
@@ -47,7 +46,6 @@ Copy `config.example.json` to `config.json` and fill in your values:
 
 **Configuration Fields:**
 - `faceit_token`: Your FACEIT API token (get from [FACEIT Developer Portal](https://developers.faceit.com/))
-- `faceit_guid`: Your FACEIT GUID
 - `discord_token`: Discord bot token (create a bot at [Discord Developer Portal](https://discord.com/developers/applications))
 - `discord_channel_id`: Discord channel ID where notifications will be sent
 - `poll_interval_seconds`: How often to check for new matches (in seconds, default: 60)
