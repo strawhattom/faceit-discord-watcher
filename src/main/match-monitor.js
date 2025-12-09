@@ -13,6 +13,8 @@ class MatchMonitor {
     pollInterval
     /** @type {number} */
     pollIntervalMs
+    /** @type {boolean} */
+    first
 
     constructor(faceitApi, matchTracker, discordChannel) {
         this.faceitApi = faceitApi;
@@ -20,6 +22,7 @@ class MatchMonitor {
         this.discordChannel = discordChannel;
         this.pollInterval = null;
         this.pollIntervalMs = 60000; // 1 minute default
+        this.first = true; // First initial check
     }
 
     /**
@@ -131,7 +134,7 @@ class MatchMonitor {
                     // Process each user in this match and collect results
                     const userResults = [];
                     for (const userData of usersInMatch) {
-                        const result = await this.processNewMatch(
+                        const result = this.processNewMatch(
                             userData.playerId,
                             userData.match,
                             userData.currentElo,
@@ -149,8 +152,13 @@ class MatchMonitor {
                         await this.sendGroupedDiscordNotification(
                             usersInMatch[0].match,
                             matchDetails,
-                            userResults
+                            userResults,
+                            this.first
                         );
+
+                        if (this.first) {
+                            this.first = false;
+                        }
                     }
 
                     // Small delay between matches
@@ -334,12 +342,32 @@ class MatchMonitor {
     }
 
     /**
+     * 
+     * @param {Object} result       User result object with {nickname, oldElo, currentElo, eloChange, won}
+     * @param {boolean} first       Indicate if this is the first result (changes the content)
+     * @returns 
+     */
+    #getUserInlineDetail(result, first = false) {
+        const eloChangeStr = result.eloChange > 0 ? `+${result.eloChange}` : `${result.eloChange}`;
+        
+        let message = `**${result.nickname}**: ${result.oldElo} → ${result.currentElo} (${eloChangeStr})`
+        
+        if (!first) {
+            const emoji = result.won ? '✅' : '❌';
+            message = `${emoji} ${message}`;
+        }
+
+        return message;
+    }
+
+    /**
      * Send grouped Discord notification for multiple users in the same match
      * @param {Object} match - Match data
      * @param {Object} matchDetails - Match details
      * @param {Array} userResults - Array of user result objects with {nickname, oldElo, currentElo, eloChange, won}
-     */
-    async sendGroupedDiscordNotification(match, matchDetails, userResults) {
+     * @param {boolean} first - Indicate if this is the first grouped discord notification since start. (changes the embed message content)
+    */
+    async sendGroupedDiscordNotification(match, matchDetails, userResults, first = false) {
         try {
             if (!userResults || userResults.length === 0) {
                 return;
@@ -350,19 +378,18 @@ class MatchMonitor {
             const color = hasWin ? 0x00ff00 : 0xff0000;
 
             // Build description with all users
-            const userDescriptions = userResults.map(result => {
-                const eloChangeStr = result.eloChange > 0 ? `+${result.eloChange}` : `${result.eloChange}`;
-                const emoji = result.won ? '✅' : '❌';
-                return `${emoji} **${result.nickname}**: ${result.oldElo} → ${result.currentElo} (${eloChangeStr})`;
-            });
+            const userDescriptions = userResults.map(result => this.#getUserInlineDetail(result, first));
+
+            const trackedPlayersLabel = `${userResults.length} tracked player${userResults.length > 1 ? 's' : ''}`
+            const embedMainTitle = first ? `Keeping track of latest matches for ${trackedPlayersLabel}` : `New latest match results (${trackedPlayersLabel})`
 
             const embed = {
-                title: `🎮 Faceit - New match results (${userResults.length} tracked player${userResults.length > 1 ? 's' : ''})`,
+                title: `🎮 Faceit - ${embedMainTitle}`,
                 description: userDescriptions.join('\n'),
                 color: color,
                 fields: [
                     {
-                        name: 'Match ID',
+                        name: first ? 'Last Match ID' : 'Match ID',
                         value: match.match_id,
                         inline: true
                     },
