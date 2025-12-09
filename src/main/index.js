@@ -24,18 +24,18 @@ client.once(Events.ClientReady, async (readyClient) => {
 		await matchTracker.initialize();
 		
 		// Get Discord channel
-		const channelId = config.discord_channel_id;
-		let discordChannel = null;
+		const channelIds = config.discord_channel_ids;
+		let discordChannels = null;
 		
-		if (channelId) {
-			discordChannel = await client.channels.fetch(channelId);
-			console.log(`Discord channel set: ${discordChannel.name}`);
+		if (channelIds) {
+			discordChannels = await Promise.all(channelIds.map(id => client.channels.fetch(id)));
+			console.log(`Discord channels set: ${discordChannels.map(d => d.name).join(",")}`);
 		} else {
 			console.warn('No discord_channel_id in config, notifications will be disabled');
 		}
 		
 		// Initialize monitor
-		matchMonitor = new MatchMonitor(faceitApi, matchTracker, discordChannel);
+		matchMonitor = new MatchMonitor(faceitApi, matchTracker, discordChannels);
 		
 		// Register users from config
 		if (config.faceit_users && Array.isArray(config.faceit_users)) {

@@ -11,8 +11,8 @@ class MatchMonitor {
     faceitApi
     /** @type {MatchTracker}*/
     matchTracker
-    /**@type {string} */
-    discordChannel
+    /**@type {string[]} */
+    discordChannels
     /** @type {number} */
     pollInterval
     /** @type {number} */
@@ -20,10 +20,10 @@ class MatchMonitor {
     /** @type {boolean} */
     first
 
-    constructor(faceitApi, matchTracker, discordChannel) {
+    constructor(faceitApi, matchTracker, discordChannels) {
         this.faceitApi = faceitApi;
         this.matchTracker = matchTracker;
-        this.discordChannel = discordChannel;
+        this.discordChannels = discordChannels;
         this.pollInterval = null;
         this.pollIntervalMs = 60000; // 1 minute default
         this.first = true; // First initial check
@@ -151,7 +151,7 @@ class MatchMonitor {
                     }
 
                     // Send one Discord notification for the entire match group
-                    if (this.discordChannel && userResults.length > 0) {
+                    if (this.discordChannels && userResults.length > 0) {
                         await this.sendGroupedDiscordNotification(
                             usersInMatch[0].match,
                             matchDetails,
@@ -425,7 +425,7 @@ class MatchMonitor {
                 }
             }
 
-            await this.discordChannel.send({ embeds: [embed] });
+            await Promise.all(this.discordChannels.map(discordChannel => discordChannel.send({ embeds: [embed] })));
         } catch (error) {
             console.error('Error sending grouped Discord notification:', error);
         }

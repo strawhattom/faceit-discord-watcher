@@ -35,7 +35,9 @@ Copy `config.example.json` to `config.json` and fill in your values:
 {
     "faceit_token": "your-faceit-api-token",
     "discord_token": "your-discord-bot-token",
-    "discord_channel_id": "your-discord-channel-id",
+    "discord_channel_ids": [
+        "your-discord-channel-id"
+    ],
     "poll_interval_seconds": 60,
     "faceit_users": [
         "nickname1",
@@ -47,7 +49,7 @@ Copy `config.example.json` to `config.json` and fill in your values:
 **Configuration Fields:**
 - `faceit_token`: Your FACEIT API token (get from [FACEIT Developer Portal](https://developers.faceit.com/))
 - `discord_token`: Discord bot token (create a bot at [Discord Developer Portal](https://discord.com/developers/applications))
-- `discord_channel_id`: Discord channel ID where notifications will be sent
+- `discord_channel_ids`: array of Discord channel ID where notifications will be sent
 - `poll_interval_seconds`: How often to check for new matches (in seconds, default: 60)
 - `faceit_users`: Array of FACEIT nicknames or player IDs to monitor
 
@@ -138,7 +140,7 @@ The bot includes delays between API calls to respect FACEIT's rate limits. If yo
 - Try using the player ID instead of nickname
 
 ### Discord notifications not working
-- Verify `discord_channel_id` is correct
+- Verify `discord_channel_ids` contains correct ids
 - Ensure the bot has permission to send messages in the channel
 - Check that the bot is in the Discord server
 
