@@ -109,7 +109,7 @@ async function registerUser(userIdentifier) {
 		const lastMatchId = matchHistory.items?.[0]?.match_id || null;
 		
 		// Register user
-		// await matchTracker.registerUser(playerId, nickname, currentElo, lastMatchId);
+		await matchTracker.registerUser(playerId, nickname, currentElo, lastMatchId);
 		
 		console.log(`✓ Registered: ${nickname} (${playerId}) - ELO: ${currentElo}`);
 	} catch (error) {

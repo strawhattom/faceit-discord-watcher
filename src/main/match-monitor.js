@@ -239,7 +239,10 @@ class MatchMonitor {
             // This preserves the ELO from before the match was detected
             const oldElo = lastElo ?? (userInfo.lastElo || currentElo);
             const eloChange = currentElo - oldElo;
-            const won = playerInMatch.stats?.result === '1' || playerInMatch.stats?.result === 'win';
+
+            // Get the user faction to determine if he won or not.
+            const userFaction = Object.keys(matchDetails.teams).find(factionId => matchDetails.teams[factionId].roster.find(player => player.player_id === playerId))
+            const won = matchDetails.results.winner === userFaction; // The player won if the result winner is the current player's faction.
 
             // Update tracker
             await this.matchTracker.updateUserMatch(playerId, match.match_id, currentElo);
@@ -302,62 +305,18 @@ class MatchMonitor {
     }
 
     /**
-     * Send Discord notification about match result
-     */
-    async sendDiscordNotification(nickname, match, matchDetails, oldElo, newElo, eloChange, won) {
-        try {
-            const eloChangeStr = eloChange > 0 ? `+${eloChange}` : `${eloChange}`;
-            const emoji = won ? '✅' : '❌';
-            const color = won ? 0x00ff00 : 0xff0000;
-
-            const embed = {
-                title: `${emoji} ${nickname} ${won ? 'WON' : 'LOST'} a match`,
-                description: `**ELO Change:** ${oldElo} → ${newElo} (${eloChangeStr})`,
-                color: color,
-                fields: [
-                    {
-                        name: 'Match ID',
-                        value: match.match_id,
-                        inline: true
-                    },
-                    {
-                        name: 'Started',
-                        value: new Date(match.started_at * 1000).toLocaleString(),
-                        inline: true
-                    }
-                ],
-                timestamp: new Date().toISOString(),
-                footer: {
-                    text: 'FACEIT Match Tracker'
-                }
-            };
-
-            // Add match link if available
-            if (match.match_id) {
-                embed.url = `https://www.faceit.com/en/cs2/room/${match.match_id}`;
-            }
-
-            await this.discordChannel.send({ embeds: [embed] });
-        } catch (error) {
-            console.error('Error sending Discord notification:', error);
-        }
-    }
-
-    /**
      * 
      * @param {UserResult} result       User result object with {nickname, oldElo, currentElo, eloChange, won}
      * @returns {string}
      */
     #getUserInlineDetail(result) {
         const eloChangeStr = result.eloChange > 0 ? `+${result.eloChange}` : `${result.eloChange}`;
-        
-        let message = `**${result.nickname}**: ${result.oldElo} → ${result.currentElo} (${eloChangeStr})`
-        
-        if (!this.first) {
-            const emoji = result.won ? '✅' : '❌';
-            message = `${emoji} ${message}`;
-        }
-
+        const emoji = result.eloChange > 0 
+            ? '📈' 
+            : result.eloChange === 0 
+                ? '🎯' 
+                : '📉 ';
+        const message = `${emoji} **${result.nickname}**: ${result.oldElo} → ${result.currentElo} (${eloChangeStr})`
         return message;
     }
 
