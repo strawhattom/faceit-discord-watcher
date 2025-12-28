@@ -10,6 +10,71 @@ export interface Match {
     // bunch of others properties to document...
 }
 
+interface DetailedResult {
+    asc_score: boolean;
+    /**
+     * Faction Id
+     */
+    winner: string;
+    factions: {
+        [factionId: string]: {
+            score: number;
+        }
+    }
+}
+
+interface FactionMember {
+    player_id:string;
+    /** Faceit name */
+    nickname: string;
+    /** Avatar URL */
+    avatar: string;
+    /** Membership */
+    membership: "free" | "super_match_token" | "premium";
+    /** Game player id */
+    game_player_id: string
+    /** Game player name */
+    game_player_name: string;
+    /** Faceit Level */
+    game_skill_level: number;
+    anticheat_required: boolean;
+}
+
+interface FactionStatistics {
+    winProbability: float;
+    skillLevel: {
+        average: number;
+        range: {
+            min: number,
+            max: number,
+        }
+        rating: number;
+    }
+}
+
+interface TeamFaction {
+    /**
+     * Faction Id (usually `leader`)
+     */
+    faction_id: string;
+    /**
+     * Name of the team usually `team_` + leader name
+     */
+    name: string;
+    /**
+     * Leader Id
+     */
+    leader: string;
+    /**
+     * Leader avatar
+     */
+    avatar: string;
+    roster: FactionMember[];
+    stats: FactionStatistics;
+    substituted: boolean;
+    type: string;
+}
+
 export interface MatchDetail {
     match_id: string;
     region: string;
@@ -22,7 +87,23 @@ export interface MatchDetail {
         location?: any // TODO,
         voted_entity_types: Set<VotedEntityTypes>
     },
-    teams: any;
+    teams: {
+        [factionId: string]: TeamFaction,
+    };
+    results: {
+        /**
+         * Faction winner
+         */
+        winner: string;
+        /**
+         * Score detail 
+         * FactionId => Score (number)
+         */
+        score: {
+            [factionId: string]: number;
+        }
+    },
+    detailed_results: DetailedResult
 }
 
 export interface MapEntity {

@@ -2,7 +2,8 @@ const FaceitAPI = require('./faceit-api');
 const MatchTracker = require('./match-tracker');
 
 /**
- * @import { UserResult, MatchDetail } from "./types/match-monitor"
+ * @import { UserResult } from "./types/match-monitor"
+ * @import { MatchDetail } from "./types/faceit";
  */
 
 class MatchMonitor {
@@ -246,7 +247,6 @@ class MatchMonitor {
 
             // Update tracker
             await this.matchTracker.updateUserMatch(playerId, match.match_id, currentElo);
-
             console.log(`New match for ${userInfo.nickname}: ${won ? 'WON' : 'LOST'} | ELO: ${oldElo} → ${currentElo} (${eloChange > 0 ? '+' : ''}${eloChange})`);
 
             // Return user match result data (Discord notification will be sent per group)
@@ -255,7 +255,9 @@ class MatchMonitor {
                 oldElo,
                 currentElo,
                 eloChange,
-                won
+                won,
+                userDetail: playerInMatch,
+                faction: userFaction
             };
         } catch (error) {
             console.error(`Error processing match for ${playerId}:`, error);
@@ -306,7 +308,7 @@ class MatchMonitor {
 
     /**
      * 
-     * @param {UserResult} result       User result object with {nickname, oldElo, currentElo, eloChange, won}
+     * @param {UserResult} result       User result object
      * @returns {string}
      */
     #getUserInlineDetail(result) {
@@ -321,10 +323,25 @@ class MatchMonitor {
     }
 
     /**
+     * Get printable matchscore (i.e. 13 - 11)
+     * @param {MatchDetail} matchDetails 
+     * @param {string} factionId
+     * @returns {string}
+     */
+    #getPrintableMatchScore(matchDetails, factionId) {
+        const oppositeFactionId = factionId === "faction1" ? "faction2" : "faction1"
+        const scores = matchDetails.results.score;
+        const trackedFactionScore = scores[factionId];
+        const oppositeFactionScore = scores[oppositeFactionId];
+
+        return `${trackedFactionScore} - ${oppositeFactionScore}`
+    }
+
+    /**
      * Send grouped Discord notification for multiple users in the same match
      * @param {Object} match - Match data
-     * @param {Object} matchDetails - Match details
-     * @param {Array} userResults - Array of user result objects with {nickname, oldElo, currentElo, eloChange, won}
+     * @param {MatchDetail} matchDetails - Match details
+     * @param {Array<UserResult>} userResults - Array of user result objects 
     */
     async sendGroupedDiscordNotification(match, matchDetails, userResults) {
         try {
@@ -347,6 +364,10 @@ class MatchMonitor {
                 description: userDescriptions.join('\n'),
                 color: color,
                 fields: [
+                    {
+                        name: 'Score',
+                        value: this.#getPrintableMatchScore(matchDetails, userResults[0].faction),
+                    },
                     {
                         name: this.first ? 'Last Match ID' : 'Match ID',
                         value: match.match_id,
